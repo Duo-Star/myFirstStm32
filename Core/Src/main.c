@@ -48,7 +48,7 @@ static void MX_GPIO_Init(void);
   */
 int main(void) {
     /* USER CODE BEGIN 1 */
-    int mode = 2;
+    int mode = 5;
     int modeTotal = 5;
     float dt =.001;
     float t = .0;
@@ -89,28 +89,30 @@ int main(void) {
         }
     }
 
-    int SOS_s = 3000;
-    int SOS_l = 1000;
+    void BeepMusic(int lt) {
+        for (int i = 0; i<100; i++) {
+            if (i < lt) {
+                HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, 1);
+            } else {
+                HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, 0);
+            }
+        }
+    }
 
-    int SOS_data[] = {
-            1,
-            2, // 亮
-            SOS_s*1,
-            SOS_s*2,
-            SOS_s*3,
-            SOS_s*4,
-            SOS_s*5,
-            SOS_s*5+SOS_l*1,
-            SOS_s*5+SOS_l*2,
-            SOS_s*5+SOS_l*3,
-            SOS_s*5+SOS_l*4,
-            SOS_s*5+SOS_l*5,
-            SOS_s*5+SOS_l*5+SOS_s*1,
-            SOS_s*5+SOS_l*5+SOS_s*2,
-            SOS_s*5+SOS_l*5+SOS_s*3,
-            SOS_s*5+SOS_l*5+SOS_s*4,
-            SOS_s*5+SOS_l*5+SOS_s*5
-    };
+    int SOS_data[] ={0,1,0,1,0,1,0,0,1,1,0,1,1,0,1,1,0,0,1,0,1,0,1,0};
+    int SOS_i = 0;
+
+    int R_data[] ={1,0,1,0};
+    int R_i = 0;
+
+    int G_data[] ={0,0,1,1};
+    int G_i = 0;
+
+    int B_data[] ={1,1,0,0};
+    int B_i = 0;
+
+    int Music_data[] ={0,10,20,30, 40, 50, 60, 70, 80, 90, 100};
+    int Music_i = 0;
 
 
     /* USER CODE END 2 */
@@ -124,6 +126,7 @@ int main(void) {
         if (HAL_GPIO_ReadPin(KEY_2_GPIO_Port, KEY_2_Pin)==1) {
             if (mode == modeTotal) { mode = 1; } else { mode+=1; }
             beepCurrent = 0;
+            BlowOut3LED();
             HAL_Delay(dt*1e3);
             while (HAL_GPIO_ReadPin(KEY_2_GPIO_Port, KEY_2_Pin)==1) {}
         } else {
@@ -140,24 +143,43 @@ int main(void) {
 
         // 模式处理
         if (mode==1) {
-           // HappyParty(200);
-        } else if (mode == 2) {
-           // HappyParty(500);
-        } else if (mode == 3) {
-            int length = sizeof(SOS_data) / sizeof(SOS_data[0]);
-            for (int i = 0; i < length; i++) {
-              int item = SOS_data[i];
-              if (abs(item - tk)<1e-8) {
-                  sosA = 1 - sosA;
-              }
+            if (tk%300==0){
+                // beepCurrent = 0;
+                int R = R_data[R_i]; R_i += 1; if (R_i==3) {R_i=0;}
+                HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 1 - R);
+
+                int G = G_data[G_i]; G_i += 1; if (G_i==3) {G_i=0;}
+                HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, 1 - G);
+
+                int B = B_data[B_i]; B_i += 1; if (B_i==3) {B_i=0;}
+                HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, 1 - B);
             }
-            HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 1 - sosA);
-           // BlowOut3LED();
-          //  SOS();
+        } else if (mode == 2) {
+            if (tk%100==0){
+                int R = R_data[R_i]; R_i += 1; if (R_i==3) {R_i=0;}
+                HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 1 - R);
+
+                int G = G_data[G_i]; G_i += 1; if (G_i==3) {G_i=0;}
+                HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, 1 - G);
+
+                int B = B_data[B_i]; B_i += 1; if (B_i==3) {B_i=0;}
+                HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, 1 - B);
+            }
+        } else if (mode == 3) {
+            if (tk%300==0){
+                sosA = SOS_data[SOS_i]; SOS_i += 1; if (SOS_i==23) {SOS_i=0;}
+                HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, 1 - sosA);
+            }
         } else if (mode == 4) {
-            RHeart(50 + 48 * sin(5.0 * t));
+            RHeart(50 + 50 * sin(5.0 * t));
         } else if (mode == 5) {
-            BlowOut3LED();
+            // BeepMusic(50 + 50 * sin(5.0 * t));
+            if (tk % 5 == 0) {
+                int M = Music_data[Music_i];
+                Music_i += 1;
+                if (Music_i == 10) { Music_i = 0; }
+                BeepMusic(M);
+            }
         }
 
         // 环境时间
